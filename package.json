@@ -1,0 +1,18 @@
+{
+    "name": "learn-with-sumit",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "nodemon index",
+        "stage": "NODE_ENV=staging nodemon index",
+        "prod": "NODE_ENV=production nodemon index",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "nodemon": "^2.0.9"
+    }
+}
