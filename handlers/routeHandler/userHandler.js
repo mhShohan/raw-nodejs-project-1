@@ -8,6 +8,7 @@
 //dependencies
 const data = require('../../lib/data');
 const { hash, parseJSON } = require('../../helpers/utilities');
+const { _token } = require('./tokenHandler');
 
 // Module scaffolding
 const handler = {};
@@ -33,15 +34,30 @@ handler._users.get = (requestPorperties, callback) => {
             : false;
 
     if (phone) {
-        data.read('users', phone, (err, u) => {
-            const user = { ...parseJSON(u) };
-            if (!err && user) {
-                delete user.password;
-                callback(200, user);
+        //verify token
+        let token =
+            typeof requestPorperties.headerObject.token === 'string'
+                ? requestPorperties.headerObject.token
+                : false;
+
+        _token.verify(token, phone, (tokenId) => {
+            if (tokenId) {
+                //lookup user if authentication verified
+                data.read('users', phone, (err, u) => {
+                    const user = { ...parseJSON(u) };
+                    if (!err && user) {
+                        delete user.password;
+                        callback(200, user);
+                    } else {
+                        callback(404, { Error: 'Requested User not found!' });
+                    }
+                }); // lookup end
             } else {
-                callback(404, { Error: 'Requested User not found!' });
+                callback(403, {
+                    error: 'Authentication failed for get user...',
+                });
             }
-        });
+        }); //verify end
     } else {
         callback(404, { Error: 'Requested User not found!' });
     }
@@ -135,38 +151,53 @@ handler._users.put = (requestPorperties, callback) => {
             : false;
     if (phone) {
         if (firstName || lastName || password) {
-            //find the user
-            data.read('users', phone, (err, user) => {
-                const userData = { ...parseJSON(user) };
+            //verify token
+            let token =
+                typeof requestPorperties.headerObject.token === 'string'
+                    ? requestPorperties.headerObject.token
+                    : false;
 
-                if (!err && userData) {
-                    if (firstName) {
-                        userData.firstName = firstName;
-                    }
-                    if (lastName) {
-                        userData.lastName = lastName;
-                    }
-                    if (password) {
-                        userData.password = hash(password);
-                    }
-                    //update database
-                    data.update('users', phone, userData, (err) => {
-                        if (err) {
-                            callback(200, {
-                                message: 'User was updated Successfully!',
+            _token.verify(token, phone, (tokenId) => {
+                if (tokenId) {
+                    //lookup the user
+                    data.read('users', phone, (err, user) => {
+                        const userData = { ...parseJSON(user) };
+
+                        if (!err && userData) {
+                            if (firstName) {
+                                userData.firstName = firstName;
+                            }
+                            if (lastName) {
+                                userData.lastName = lastName;
+                            }
+                            if (password) {
+                                userData.password = hash(password);
+                            }
+                            //update database
+                            data.update('users', phone, userData, (err) => {
+                                if (err) {
+                                    callback(200, {
+                                        message:
+                                            'User was updated Successfully!',
+                                    });
+                                } else {
+                                    callback(500, {
+                                        error: 'Cannot update Data ...',
+                                    });
+                                }
                             });
                         } else {
-                            callback(500, {
-                                error: 'Cannot update Data ...',
+                            callback(400, {
+                                error: 'Cannot read Data for updating...',
                             });
                         }
-                    });
+                    }); //lookup end
                 } else {
-                    callback(400, {
-                        error: 'Cannot read Data for updating...',
+                    callback(403, {
+                        error: 'Authentication failed for get user...',
                     });
                 }
-            });
+            }); //verify end
         } else {
             callback(400, { error: 'Update atleast one field!' });
         }
@@ -185,23 +216,40 @@ handler._users.delete = (requestPorperties, callback) => {
             : false;
 
     if (phone) {
-        data.read('users', phone, (err1, userData) => {
-            if (!err1 && userData) {
-                data.delete('users', phone, (err2) => {
-                    if (err2) {
-                        callback(200, { message: 'user deleted successfully' });
+        //verify token
+        let token =
+            typeof requestPorperties.headerObject.token === 'string'
+                ? requestPorperties.headerObject.token
+                : false;
+
+        _token.verify(token, phone, (tokenId) => {
+            if (tokenId) {
+                //lookup user
+                data.read('users', phone, (err1, userData) => {
+                    if (!err1 && userData) {
+                        data.delete('users', phone, (err2) => {
+                            if (err2) {
+                                callback(200, {
+                                    message: 'user deleted successfully',
+                                });
+                            } else {
+                                callback(500, {
+                                    error: 'Cannot delete requested user!!!',
+                                });
+                            }
+                        });
                     } else {
                         callback(500, {
-                            error: 'Cannot delete requested user!!!',
+                            error: 'Cannot read user for  deleting!!!',
                         });
                     }
-                });
+                }); //lookupr ends
             } else {
-                callback(500, {
-                    error: 'Cannot read user for  deleting!!!',
+                callback(403, {
+                    error: 'Authentication failed for get user...',
                 });
             }
-        });
+        }); //verify end
     } else {
         callback(400, {
             error: 'Cannot delete the user!!!',

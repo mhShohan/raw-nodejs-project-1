@@ -38,4 +38,25 @@ utilities.hash = (str) => {
     }
 };
 
+//create random strings / tokecn
+utilities.createRandomStrings = (strLength) => {
+    let length = strLength;
+    length = typeof strLength === 'number' && strLength > 0 ? strLength : false;
+
+    if (length) {
+        let possibleCharecters = 'abcdefghijklmnopqrstuvwxyz1234567890';
+        let output = '';
+
+        for (let i = 1; i <= length; i++) {
+            let randomCharecter = possibleCharecters.charAt(
+                Math.floor(Math.random() * possibleCharecters.length)
+            );
+            output += randomCharecter;
+        }
+        return output;
+    } else {
+        return fale;
+    }
+};
+
 module.exports = utilities;
