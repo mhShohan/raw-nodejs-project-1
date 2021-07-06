@@ -12,12 +12,14 @@ environment.staging = {
     port: 8080,
     envName: 'staging',
     secretKey: 'ahsnhsdfhjs',
+    maxChecks: 5,
 };
 
 environment.production = {
     port: 5000,
     envName: 'production',
     secretKey: 'ahsnhsdfhjs',
+    maxChecks: 5,
 };
 
 //determide whice environment was passed
